@@ -8,7 +8,10 @@ import re
 import codecs
 import requests
 
-def get_tags(tags_url):
+def get_tags(game_url):
+
+    """Returns full list of tags for the given game's steam page url"""
+
     tags_soup = soup(urlopen(tags_url).read(), "html.parser")
     tags_html = tags_soup.findAll("a",{"class":"app_tag"})
     tags = []
@@ -17,22 +20,26 @@ def get_tags(tags_url):
     return tags
 
 def get_profileinfo(profile_url):
-    """Returns dictionary of """
+
+    """Returns list of game info in the form of dictionaries:
+        {'appid',
+        'name',
+        'last_played',
+        'hours_forever'}"""
+
     profile_soup = soup(urlopen(profile_url).read(), "html.parser")
     js_text = profile_soup.findAll('script', language="javascript")[0].text
 
-    # basic and optional info for each owned game: {appid: {'name':name,'total_hours':total_hours,'last_played':last_played}}
     # basic info:
     basic_regex = re.compile(r'"appid":(\d+),"name":"(.+?)"',re.MULTILINE)
     basic_info = re.findall(basic_regex, js_text)
-    
+
     # change to dictionary with appid as keys and dictionaries for game info
     basic_info = dict([(a,{'appid':a, 'name':b, 'last_played':'None', 'total_hours':'None'}) for (a,b) in basic_info])
 
     # searching for optional info:
     totalhours_regex = re.compile(r'"appid":(\d+),.+?,"hours_forever":"(\d+\.\d+)"', re.MULTILINE)
     totalhours_info = re.findall(totalhours_regex, js_text)
-    
     lastplayed_regex = re.compile(r'"appid":(\d+),.+?,"last_played":(\d+)', re.MULTILINE)
     lastplayed_info = re.findall(lastplayed_regex, js_text)
     
@@ -46,6 +53,7 @@ def get_profileinfo(profile_url):
     return basic_info.values()
 
 def save_gameurls(game_info, filename):
+
     """ Saves user's game data from get_gameurls() to .csv """
 
     if filename[-4:] != '.csv':
@@ -54,14 +62,10 @@ def save_gameurls(game_info, filename):
     with codecs.open(filename, 'w+', 'utf-8') as f:
         f.write('appid,name,last_played,total_hours'+'\r\n')
         for entry in game_info:
-            # f.write(entry+','+'"'+game_info[entry]['name']+'"'+','+game_info[entry]['last_played']+','+game_info[entry]['total_hours']+'\r\n')
             f.write(entry['appid']+',"'+entry['name']+'",'+entry['last_played']+','+entry['total_hours']+'\r\n')
 
-
-def replace_safechars(game_titles):
-    pass
-
 def main():
+    # Debugging stuff
     games = get_profileinfo(sys.argv[1])
     print(games)
     save_gameurls(games, 'test2.csv')
