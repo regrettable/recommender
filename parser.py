@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup as soup
 from urllib.request import urlopen
 import re
 import codecs
-import requests
 
 def get_tags(game_url):
 
@@ -14,7 +13,7 @@ def get_tags(game_url):
 
     tags_soup = soup(urlopen(tags_url).read(), "html.parser")
     tags_html = tags_soup.findAll("a",{"class":"app_tag"})
-    tags = []
+    tags      = []
     for tag in tags_html:
         tags.append(tag.text.strip())
     return tags
@@ -23,25 +22,25 @@ def get_profileinfo(profile_url):
 
     """Returns list of game info in the form of dictionaries:
         {'appid',
-        'name',
-        'last_played',
-        'hours_forever'}"""
+         'name',
+         'last_played',
+         'hours_forever'}"""
 
     profile_soup = soup(urlopen(profile_url).read(), "html.parser")
-    js_text = profile_soup.findAll('script', language="javascript")[0].text
+    js_text      = profile_soup.findAll('script', language = "javascript")[0].text
 
     # basic info:
     basic_regex = re.compile(r'"appid":(\d+),"name":"(.+?)"',re.MULTILINE)
-    basic_info = re.findall(basic_regex, js_text)
+    basic_info  = re.findall(basic_regex, js_text)
 
     # change to dictionary with appid as keys and dictionaries for game info
     basic_info = dict([(a,{'appid':a, 'name':b, 'last_played':'None', 'total_hours':'None'}) for (a,b) in basic_info])
 
     # searching for optional info:
     totalhours_regex = re.compile(r'"appid":(\d+),.+?,"hours_forever":"(\d+\.\d+)"', re.MULTILINE)
-    totalhours_info = re.findall(totalhours_regex, js_text)
+    totalhours_info  = re.findall(totalhours_regex, js_text)
     lastplayed_regex = re.compile(r'"appid":(\d+),.+?,"last_played":(\d+)', re.MULTILINE)
-    lastplayed_info = re.findall(lastplayed_regex, js_text)
+    lastplayed_info  = re.findall(lastplayed_regex, js_text)
     
     # adding optional info where possible
     for total_hours, last_played in zip(totalhours_info, lastplayed_info):
